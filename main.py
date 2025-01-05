@@ -1,8 +1,9 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
+import torch
+from torchvision import transforms
 from ultralytics import YOLO
-import cv2
 
 # Load YOLO model
 @st.cache_resource
@@ -32,17 +33,18 @@ def main():
         st.image(image, caption="Uploaded Image", use_container_width=True)
         st.write("Detecting tumors...")
 
-        # Convert PIL Image to NumPy array (OpenCV format)
-        image_np = np.array(image)
+        # Define image transformation (resize and normalization)
+        transform = transforms.Compose([
+            transforms.Resize((640, 640)),  # Resize to 640x640 (YOLO input size)
+            transforms.ToTensor(),  # Convert image to tensor
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize image
+        ])
 
-        # Resize the image to 640x640 (YOLO input size)
-        image_resized = cv2.resize(image_np, (640, 640))
+        # Apply the transformations to the image
+        image_tensor = transform(image).unsqueeze(0)  # Add batch dimension
 
-        # Convert the image from RGB to BGR if needed (YOLO expects BGR)
-        image_bgr = cv2.cvtColor(image_resized, cv2.COLOR_RGB2BGR)
-
-        # Perform inference using YOLO
-        results = model.predict(source=image_bgr, imgsz=640, save=False, save_txt=False)
+        # Perform inference using YOLO (Torch tensors)
+        results = model.predict(source=image_tensor, imgsz=640, save=False, save_txt=False)
 
         # Draw bounding boxes on the image
         result_image = results[0].plot()  # Annotate image with results
