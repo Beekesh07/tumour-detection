@@ -29,7 +29,7 @@ def main():
 
     if uploaded_file is not None:
         # Load and display the uploaded image
-        image = Image.open(uploaded_file)
+        image = Image.open(uploaded_file).convert("RGB")  # Ensure the image is in RGB format
         st.image(image, caption="Uploaded Image", use_container_width=True)
         st.write("Detecting tumors...")
 
